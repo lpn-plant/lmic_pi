@@ -9,13 +9,11 @@
 #include <errno.h>
 
 
-int fd;
 
 // -----------------------------------------------------------------------------
 // I/O
 
 static void hal_io_init () {
-    wiringPiSetup();
     pinMode(pins.nss, OUTPUT);
     pinMode(pins.rxtx, OUTPUT);
     pinMode(pins.rst, OUTPUT);
@@ -181,7 +179,8 @@ void hal_enableIRQs () {
 }
 
 void hal_init() {
-    fd=wiringPiSetup();
+    printf("hal_init!\n");
+    wiringPiSetup();
     hal_io_init();
     // configure radio SPI
     hal_spi_init();

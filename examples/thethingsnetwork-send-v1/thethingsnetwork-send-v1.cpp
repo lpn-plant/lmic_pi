@@ -127,7 +127,7 @@ static void do_send(osjob_t* j){
 
 void setup() {
   // LMIC init
-  wiringPiSetup();
+  //wiringPiSetup();
 
   os_init();
   // Reset the MAC state. Session and pending data transfers will be discarded.
