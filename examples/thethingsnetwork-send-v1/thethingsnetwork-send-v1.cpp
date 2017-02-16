@@ -204,6 +204,22 @@ void setup() {
   LMIC_disableTracking ();
   // Stop listening for downstream data (periodical reception)
   LMIC_stopPingable();
+
+  LMIC_disableChannel(1);
+  LMIC_disableChannel(2);
+  LMIC_disableChannel(3);
+  LMIC_disableChannel(4);
+  LMIC_disableChannel(5);
+  LMIC_disableChannel(6);
+  LMIC_disableChannel(7);
+  LMIC_disableChannel(8);
+  LMIC_disableChannel(9);
+  LMIC_disableChannel(10);
+  LMIC_disableChannel(11);
+  LMIC_disableChannel(12);
+  LMIC_disableChannel(13);
+  LMIC_disableChannel(14);
+  LMIC_disableChannel(15);
   // Set data rate and transmit power (note: txpow seems to be ignored by the library)
   LMIC_setDrTxpow(DR_SF7,14);
   //
