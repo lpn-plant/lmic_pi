@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <errno.h>
+#include <unistd.h>
 
 
 
@@ -168,7 +169,7 @@ void hal_enableIRQs () {
   }
 
   void hal_sleep () {
-      // Not implemented
+      sleep(1);
   }
 
   void hal_failed (const char *file, u2_t line) {

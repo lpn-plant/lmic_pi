@@ -227,11 +227,10 @@ void setup() {
 
 void loop() {
 
-do_send(&sendjob);
+  do_send(&sendjob);
 
-while(1) {
-  os_runloop();
-//  os_runloop_once();
+  while(1) {
+    os_runloop();
   }
 }
 
