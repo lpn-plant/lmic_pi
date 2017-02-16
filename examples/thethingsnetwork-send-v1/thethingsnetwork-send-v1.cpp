@@ -31,6 +31,9 @@
 #include <hal.h>
 #include <local_hal.h>
 
+#define POS_FILE "/dev/shm/position"
+#define TEMP_FILE "/dev/shm/temp"
+
 // LoRaWAN Application identifier (AppEUI)
 // Not used in this example
 static const u1_t APPEUI[8]  = { 0x02, 0x00, 0x00, 0x00, 0x00, 0xEE, 0xFF, 0xC0 };
@@ -52,6 +55,45 @@ static const u1_t ARTKEY[16] = { 0x2B, 0x7E, 0x15, 0x16, 0x28, 0xAE, 0xD2, 0xA6,
 static const u4_t DEVADDR = 0xffffffff ; // <-- Change this address for every node!
 
 //////////////////////////////////////////////////
+// Helper functions
+//////////////////////////////////////////////////
+
+bool getPosition(u4_t* lat, u4_t* lon) {
+  float lat_f, lon_f;
+  FILE* pos_file;
+
+  pos_file = fopen(POS_FILE, "r");
+  if (pos_file != NULL) {
+    fscanf(pos_file,"%f %f", &lat_f, &lon_f);
+    fclose(pos_file);
+  } else {
+    return false;
+  }
+
+  *lat = lat_f*100000;
+  *lon = lon_f*100000;
+
+  return true;
+}
+
+bool getTemp(u2_t* temp) {
+  float temp_f;
+  FILE* temp_file;
+
+  temp_file = fopen(TEMP_FILE, "r");
+  if (temp_file != NULL) {
+    fscanf(temp_file, "%f", &temp_f);
+    fclose(temp_file);
+  } else {
+    return false;
+  }
+
+  *temp = temp_f*10;
+
+  return true;
+}
+
+//////////////////////////////////////////////////
 // APPLICATION CALLBACKS
 //////////////////////////////////////////////////
 
@@ -71,7 +113,7 @@ void os_getDevKey (u1_t* buf) {
 }
 
 u4_t cntr=0;
-u1_t mydata[] = {"Hello, world!                               "};
+u1_t mydata[100];
 static osjob_t sendjob;
 
 // Pin mapping
@@ -101,24 +143,43 @@ void onEvent (ev_t ev) {
     }
 }
 
+#pragma pack(push, 1)
+struct msg_t {
+    u4_t ts;
+    u4_t lat;
+    u4_t lon;
+    u2_t temp;
+    u2_t cntr;
+} mymsg;
+#pragma pack(pop)
+
 static void do_send(osjob_t* j){
+      u4_t lat = 0xFFFFFFFF, lon = 0xFFFFFFFF;
+      u2_t temp = 0xFFFF;
+
       time_t t=time(NULL);
       fprintf(stdout, "[%x] (%ld) %s\n", hal_ticks(), t, ctime(&t));
+
+      if (getPosition(&lat, &lon)) {
+         fprintf(stdout, "lat=%d, lon=%d\n", lat, lon);
+      }
+
+      if (getTemp(&temp)) {
+         fprintf(stdout, "temp=%d\n", temp);
+      }
       // Show TX channel (channel numbers are local to LMIC)
       // Check if there is not a current TX/RX job running
     if (LMIC.opmode & (1 << 7)) {
       fprintf(stdout, "OP_TXRXPEND, not sending");
     } else {
       // Prepare upstream data transmission at the next possible time.
-      char buf[100];
-      sprintf(buf, "Hello world! [%d]", cntr++);
-      int i=0;
-      while(buf[i]) {
-        mydata[i]=buf[i];
-        i++;
-      }
-      mydata[i]='\0';
-      LMIC_setTxData2(1, mydata, strlen(buf), 0);
+      mymsg.cntr = cntr++;
+      mymsg.lat = lat;
+      mymsg.lon = lon;
+      mymsg.temp = temp;
+      mymsg.ts = t;
+      memcpy(mydata, &mymsg, sizeof(mymsg));
+      LMIC_setTxData2(1, mydata, sizeof(mymsg), 0);
     }
     // Schedule a timed job to run at the given timestamp (absolute system time)
     os_setTimedCallback(j, os_getTime()+sec2osticks(20), do_send);
